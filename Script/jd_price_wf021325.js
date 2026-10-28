@@ -56,29 +56,84 @@ if ($.isNode()) {
 const path1 = '/product/graphext/';
 const path2 = '/baoliao/center/menu'
 const manmanbuy_key = 'manmanbuy_val';
-const url = $request.url;
+const url = (typeof $request !== 'undefined' && $request && $request.url) || '';
 
 //【V1】请求3次 次新接口 【V2】请求4次 最新接口
 $.version = $.getdata('mmb_v') || 'V1'
 
+// ===== 安全层：保证任何路径都一定会 $done，绝不让页面白屏 =====
+let __finished = false;
+function finish(obj) {
+    if (__finished) return;
+    __finished = true;
+    try { $done(obj || {}); } catch (e) { $.log('$done 异常: ' + e); }
+}
+
+// 取原始响应体，非字符串一律安全处理
+function rawBody() {
+    let b;
+    try { b = (typeof $response !== 'undefined' && $response) ? $response.body : undefined; } catch (e) { b = undefined; }
+    if (typeof b === 'string') return b;
+    if (b === null || b === undefined) return '';
+    try { return String(b); } catch (e) { return ''; }
+}
+
+// 注入：容忍 <body class="..."> 这类带属性的写法
+function injectBody(src, snippet) {
+    if (typeof src !== 'string' || !src) return null;
+    if (!/<(?:html|body|head)[\s>]/i.test(src)) return null; // 不是 HTML（如 JSON 接口）就不要动
+    if (/<body[^>]*>/i.test(src)) return src.replace(/<body[^>]*>/i, m => m + snippet);
+    if (/<\/head>/i.test(src)) return src.replace(/<\/head>/i, m => snippet + m);
+    if (/<html[^>]*>/i.test(src)) return src.replace(/<html[^>]*>/i, m => m + snippet);
+    return snippet + src;
+}
+
+// 超时兜底：主流程若因任何原因没结束，25 秒后原样放行原页面
+setTimeout(function () {
+    if (__finished) return;
+    $.log('比价流程超时，原样放行');
+    const b = rawBody();
+    finish(b ? { body: b } : {});
+}, 25000);
+
+// CK 分支：只处理慢慢买菜单接口，处理完立刻 $done，避免请求被挂住
 if (url.includes(path2)) {
-    const reqbody = $request.body
-    $.setdata(reqbody, manmanbuy_key);
-    $.msg($.name, '获取ck成功🎉', reqbody);
+    try {
+        const reqbody = (typeof $request !== 'undefined' && $request) ? ($request.body || '') : '';
+        if (reqbody) {
+            $.setdata(reqbody, manmanbuy_key);
+            $.msg($.name, '获取ck成功🎉', reqbody);
+        } else {
+            $.log('慢慢买菜单请求体为空，未写入CK');
+        }
+    } catch (e) {
+        $.log('写入CK异常: ' + e);
+    }
+    finish({});
 }
 
 if (url.includes(path1)) {
-    const responseBody = $response?.body;
     main()
-        .then(res => $done(res || { body: responseBody }))
+        .then(res => finish(res))
         .catch(err => {
-                const html = `<div style= "max-width: 90%;margin: 20px auto;padding: 16px;background: #ffffff;color: #d32f2f;border: 2px solid #f44336;border-radius: 12px;font-size: 16px;text-align:left;box-shadow: 0 2px 6px rgba(0,0,0,0.06);"><strong>${err.message}</strong></div>`;
-                $.msg('京东比价出现错误', '👉点击此处打开慢慢买检查👈', err.message, {url: `manmanbuy://?type=func&value=MainUtils.openWin(%7Bname%3A'TrendDetailScene',navi%3Anavigation%2CpageParam%3A%7BsearchKey%3A'${$.manmanbuy_url}'%2CsceneFrom%3A'mmbwx'%7D%7D)`})
-                $done({
-                    body: responseBody.replace("<body>", `<body>${html}`)
-                });
+                const msg = (err && err.message) ? err.message : String(err);
+                $.log('京东比价失败: ' + msg);
+                const html = `<div style= "max-width: 90%;margin: 20px auto;padding: 16px;background: #ffffff;color: #d32f2f;border: 2px solid #f44336;border-radius: 12px;font-size: 16px;text-align:left;box-shadow: 0 2px 6px rgba(0,0,0,0.06);"><strong>${msg}</strong></div>`;
+                try {
+                    $.msg('京东比价出现错误', '👉点击此处打开慢慢买检查👈', msg, {url: `manmanbuy://?type=func&value=MainUtils.openWin(%7Bname%3A'TrendDetailScene',navi%3Anavigation%2CpageParam%3A%7BsearchKey%3A'${$.manmanbuy_url || ''}'%2CsceneFrom%3A'mmbwx'%7D%7D)`});
+                } catch (e) { $.log('通知失败: ' + e); }
+                // 关键：注入失败就原样返回原页面，绝不返回空 body
+                const out = injectBody(rawBody(), html);
+                finish(out ? { body: out } : {});
             }
         )
+}
+
+// 兜底：URL 不属于本脚本处理范围（例如被错误绑定到 api.m.jd.com 的标题嵌入版）时
+// 立即放行，绝不能让响应悬空——悬空会让 Loon 返回空 body，页面就会白屏
+if (!url.includes(path1) && !url.includes(path2)) {
+    $.log('URL 不在本脚本处理范围，原样放行: ' + url);
+    finish({});
 }
 
 async function main() {
@@ -89,7 +144,6 @@ async function main() {
 
     const JD_Url = `https://item.jd.com/${match[1]}.html`;
     $.manmanbuy_url = encodeURIComponent(JD_Url); // 用于后续报错点击通知自动跳转到慢慢买
-    const responseBody = $response?.body;
 
     const version = $.version || "V1";
     let link = JD_Url, stteId;
@@ -102,17 +156,24 @@ async function main() {
     const basic = checkRes(await get_spbh(link, stteId, version), '获取 spbh [V1/V2]');
     const jiagequshi = checkRes(await get_jiagequshi(basic?.result?.url, basic?.result?.spbh), '获取价格趋势')
     const trend = checkRes(await get_priceRemark(jiagequshi?.result?.trend), '价格备注')
-    const ListPriceDetail = trend?.remark?.ListPriceDetail;
-    const exclude = new Set(['当前到手价', '历史最低价', '618价格', '双11价格', '30天最低价', '60天最低价', '180天最低价']);
-    const list = ListPriceDetail.filter(i => exclude.has(i.Name));
+    const ListPriceDetail = (trend && trend.remark && trend.remark.ListPriceDetail) || [];
+    const want = new Set(['当前到手价', '历史最低价', '618价格', '双11价格', '30天最低价', '60天最低价', '180天最低价']);
+    const list = ListPriceDetail.filter(i => i && want.has(i.Name));
+    if (!list.length) throw new Error('慢慢买未返回可用价格数据（可能被风控或该商品无记录）');
     const html = Price_HTML(list);
-    //body = $response.body.replace(/<body[^>]*>/, match => `${match}\n${html}`);
-    const body = responseBody.replace("<body>", `<body>${html}`);
+    // 注入：正则匹配 <body ...>，兼容带属性的写法；取不到原始 body 时直接抛错交给兜底
+    const body = injectBody(rawBody(), html);
+    if (!body) throw new Error('原始页面取不到HTML，无法注入比价');
+    $.log('比价注入成功，条目数: ' + list.length);
     return {body};
 }
 
 // 返回结果检查函数
 function checkRes(res, desc = '') {
+    if (!res) {
+        $.log('慢慢买接口无响应: ' + desc);
+        throw new Error(`慢慢买接口无响应（${desc}）`);
+    }
     if (res.ok !== 1) {
         $.log('慢慢买提示您：' + $.toStr(res));
         throw new Error(`慢慢买提示您：${res.msg || `${desc}失败`}`);
