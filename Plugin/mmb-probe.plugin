@@ -1,20 +1,17 @@
-#!name = 慢慢买探针（排障用）
-#!desc = 只做诊断，不改任何请求。拦截 manmanbuy.com 的请求并弹通知，显示方法/URL/body长度。\n用法：装上后 Safari 打开 https://www.manmanbuy.com，弹通知说明 MITM 和脚本下载都正常；不弹说明证书或脚本下载有问题。\n排查完请卸载本插件。
+#!name = 拦截链路探针（带对照组）
+#!desc = 只做诊断。同时监控 www.baidu.com（对照组）和 *.manmanbuy.com（目标）。\n测试：先打开百度，再打开慢慢买。\n两个都没通知 = 探针插件没生效；只有百度有 = manmanbuy 的 MITM 有问题；都有 = 链路全通。\n排查完请卸载。
 #!system = ios
 
 # ============================================================
-# 这个插件不参与比价，纯粹用来确认拦截链路通不通。
-#
-# 判断逻辑：
-#   Safari 打开 www.manmanbuy.com 就弹通知
-#     → MITM 证书正常、脚本能下载、Loon 在拦截 manmanbuy 域名
-#     → 那么取不到 CK 的原因就在「App 请求的具体 URL 对不上」或「App 没走 Loon」
-#   Safari 打开什么都不弹
-#     → 证书没信任 / MitM 没开 / 脚本下载失败，先解决这三样
+# 语法与已验证可用的 fanqie.plugin 保持一致（legacy 写法 + %APPEND%）
 # ============================================================
 
 [Script]
-http-request ^https?:\/\/([a-z0-9-]+\.)*manmanbuy\.com\/ script-path=https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/mmb_probe.js, requires-body=true, timeout=15, tag="[探针]慢慢买请求"
+# 对照组：百度
+http-request ^https?://www\.baidu\.com/ script-path=https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/mmb_probe.js, requires-body=true, max-size=0, timeout=30
+
+# 目标：慢慢买全域名
+http-request ^https?://([a-z0-9-]+\.)*manmanbuy\.com/ script-path=https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/mmb_probe.js, requires-body=true, max-size=0, timeout=30
 
 [MITM]
-hostname = %APPEND% *.manmanbuy.com, manmanbuy.com
+hostname = %APPEND% *.manmanbuy.com, manmanbuy.com, www.baidu.com
