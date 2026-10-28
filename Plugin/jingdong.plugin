@@ -45,7 +45,7 @@ response if ${url} ~= /^https:\/\/api\.m\.jd\.com\/client\.action\?functionId=(?
 response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=lite_advertising/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/replace-body.js", "jdLiteAdvertisingVO -> sooyaaabo") with tag="[京东]移除京东极速版广告", requires_body=true
 
 # 京东比价 · 获取慢慢买Cookie
-request if ${url} ~= /^https?:\/\/apapia-sqk-weblogic\.manmanbuy\.com\/baoliao\/center\/menu$/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_mw418.js") with enable=${Manmanbuy-Cookie}, tag="[京东比价]获取慢慢买Cookie", timeout=60, requires_body=true
+request if ${url} ~= /^https?:\/\/apapia-sqk-weblogic\.manmanbuy\.com\/baoliao\/center\/menu(\?.*)?$/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_mw418.js") with enable=${Manmanbuy-Cookie}, tag="[京东比价]获取慢慢买Cookie", timeout=60, requires_body=true
 
 # 标题嵌入版
 response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(wareBusiness|serverConfig|basicConfig)/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_wf021325.js") with enable=${JDPrice-TitleEmbed}, tag="[京东比价]标题嵌入版", requires_body=true
