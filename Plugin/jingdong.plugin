@@ -11,7 +11,7 @@
 #!date = 2026-10-28 10:40
 
 # 脚本全部自托管在本仓库 script/ 目录，源文件取自原作者（见 README 致谢）。
-# 引用走 jsdelivr 镜像：raw.githubusercontent.com 在国内不可达。
+# 脚本引用走 GitHub 源地址。
 # 若 gcore 不可用，可整体替换为 fastly.jsdelivr.net 或 testingcf.jsdelivr.net。
 
 [Argument]
@@ -39,25 +39,25 @@ request if ${url} ~= /^https:\/\/api\.m\.jd\.com\/client\.action\?functionId=(?:
 
 [Script]
 # 京东去广告
-response if ${url} ~= /^https:\/\/api\.m\.jd\.com\/client\.action\?functionId=(?:deliverLayer|getTabHomeInfo|myOrderInfo|orderTrackBusiness|personinfoBusiness|start|welcomeHome)/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/jingdong_ad.js") with tag="[京东]移除广告", requires_body=true
+response if ${url} ~= /^https:\/\/api\.m\.jd\.com\/client\.action\?functionId=(?:deliverLayer|getTabHomeInfo|myOrderInfo|orderTrackBusiness|personinfoBusiness|start|welcomeHome)/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jingdong_ad.js") with tag="[京东]移除广告", requires_body=true
 
 # 京东极速版去广告
-response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=lite_advertising/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/replace-body.js", "jdLiteAdvertisingVO -> sooyaaabo") with tag="[京东]移除京东极速版广告", requires_body=true
+response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=lite_advertising/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/replace-body.js", "jdLiteAdvertisingVO -> sooyaaabo") with tag="[京东]移除京东极速版广告", requires_body=true
 
 # 京东比价 · 获取慢慢买Cookie
-request if ${url} ~= /^https?:\/\/apapia-sqk-weblogic\.manmanbuy\.com\/baoliao\/center\/menu$/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/jd_price_mw418.js") with enable=${Manmanbuy-Cookie}, tag="[京东比价]获取慢慢买Cookie", timeout=60, requires_body=true
+request if ${url} ~= /^https?:\/\/apapia-sqk-weblogic\.manmanbuy\.com\/baoliao\/center\/menu$/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_mw418.js") with enable=${Manmanbuy-Cookie}, tag="[京东比价]获取慢慢买Cookie", timeout=60, requires_body=true
 
 # 标题嵌入版
-response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(wareBusiness|serverConfig|basicConfig)/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/jd_price_wf021325.js") with enable=${JDPrice-TitleEmbed}, tag="[京东比价]标题嵌入版", requires_body=true
+response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(wareBusiness|serverConfig|basicConfig)/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_wf021325.js") with enable=${JDPrice-TitleEmbed}, tag="[京东比价]标题嵌入版", requires_body=true
 
 # 详情通知版
-request if ${url} ~= /^https?:\/\/in\.m\.jd\.com\/product\/graphext\/\d+\.html/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/jd_price_mw418.js") with enable=${JDPrice-DetailNotify}, tag="[京东比价]详情通知版", timeout=60
+request if ${url} ~= /^https?:\/\/in\.m\.jd\.com\/product\/graphext\/\d+\.html/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_mw418.js") with enable=${JDPrice-DetailNotify}, tag="[京东比价]详情通知版", timeout=60
 
 # 详情嵌入版 · 表格图
-response if ${url} ~= /^https?:\/\/in\.m\.jd\.com\/product\/graphext\/\d+\.html/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/jd_price_wf021325.js") with enable=${JDPrice-DetailEmbed-Table}, timeout=60, requires_body=true
+response if ${url} ~= /^https?:\/\/in\.m\.jd\.com\/product\/graphext\/\d+\.html/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_wf021325.js") with enable=${JDPrice-DetailEmbed-Table}, timeout=60, requires_body=true
 
 # 详情嵌入版 · 折线图
-response if ${url} ~= /^https?:\/\/in\.m\.jd\.com\/product\/graphext\/\d+\.html/i then script("https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Script/JingDong.price.js") with enable=${JDPrice-DetailEmbed-Line}, timeout=60, requires_body=true
+response if ${url} ~= /^https?:\/\/in\.m\.jd\.com\/product\/graphext\/\d+\.html/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/JingDong.price.js") with enable=${JDPrice-DetailEmbed-Line}, timeout=60, requires_body=true
 
 [MitM]
 hostname = api.m.jd.com, in.m.jd.com, apapia-sqk-weblogic.manmanbuy.com, m.360buyimg.com
