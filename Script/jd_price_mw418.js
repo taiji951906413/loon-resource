@@ -20,7 +20,7 @@ hostname = in.m.jd.com, apapia-sqk-weblogic.manmanbuy.com
 */
 
 const consolelog = false;
-const url = $request.url;
+const url = (typeof $request !== 'undefined' && $request && $request.url) || '';
 const $ = new Env("京东比价");
 const manmanbuy_key = 'manmanbuy_val';
 const path = '/baoliao/center/menu'
@@ -62,6 +62,7 @@ const $http = (op, t = 4) => {
   };
   
 
+var __ckDone = false;
 if (url.indexOf(path) != -1) {
     const reqbody = $request.body;
     $.setdata(reqbody, manmanbuy_key);
@@ -69,6 +70,8 @@ if (url.indexOf(path) != -1) {
     const devId = params.get('c_mmbDevId');     
     $.setdata(devId, "慢慢买CK");
     $.msg($.name, '获取ck成功🎉', reqbody);
+    __ckDone = true;
+    $done({});   // 拿到CK立即放行，避免慢慢买请求被挂到超时
 }
 
 function getck() {
@@ -222,6 +225,7 @@ const request_history_price = (id) => {
 }
 
 (async () => {
+  if (__ckDone) return;   // CK 分支已 $done，不再走比价流程
   try {
     let id = match[1]
     let data = await request_history_price(id)
@@ -241,7 +245,7 @@ const request_history_price = (id) => {
     }
     $done({});     
 } catch (e) {
-  $log(e);
+  $.log(e);
   $done({});
 }
 })();
