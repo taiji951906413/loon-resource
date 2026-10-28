@@ -1,107 +1,105 @@
-# Loon 分流规则集
+# Loon 资源库
 
-放 Loon 用的 `.lsr` 远程规则集，一个文件一组规则。
+自用的 Loon 插件、脚本和规则集。所有脚本自托管在本仓库，不依赖 GitHub raw，也不依赖第三方 CDN 的存活。
 
-目前包含：
+## 目录
 
-| 文件 | 作用 |
-|---|---|
-| `Muse.lsr` | 把 Meta Muse 及其依赖域名分流到指定节点 |
+```
+loon-resource/
+├── Plugin/                      插件本体
+│   ├── fanqie.plugin            番茄系去广告
+│   └── jingdong.plugin          京东去广告 + 历史比价
+├── Script/                      插件引用的脚本
+│   ├── fanqie_ad_filter.js      番茄信息流广告过滤
+│   ├── jingdong_ad.js           京东去广告
+│   ├── replace-body.js          京东极速版广告文案替换
+│   ├── jd_price_mw418.js        慢慢买取CK + 详情通知版比价
+│   ├── jd_price_wf021325.js     标题嵌入版 + 表格图比价
+│   └── JingDong.price.js        折线图版比价
+└── Rule/                        规则集
+    └── Muse.lsr                 Meta Muse 分流
+```
 
 ---
 
-## Muse.lsr
+## 插件
 
-Meta 的 **Muse** 是 2026-09-08 上线的个人 AI 智能体 App，**仅美国区开放**。
-国内直连 `meta.ai` 会被 Facebook 边缘节点返回 `403 Client challenge`，必须走美国节点。
+安装方式：Loon → 配置 → 插件 → 右上角 `+` → 粘贴地址 → 保存。
 
-规则集里只放裸规则（不带策略名），策略由引用行统一指定：
+### 番茄系去广告
 
-```
-DOMAIN-SUFFIX, meta.ai          # Muse 本体（网页版 www.meta.ai/muse）
-DOMAIN-SUFFIX, meta.com
-DOMAIN-SUFFIX, fbcdn.net        # 静态资源
-DOMAIN-SUFFIX, facebook.com     # 账号体系
-DOMAIN-SUFFIX, fb.com
-DOMAIN-SUFFIX, cdninstagram.com # 可选：跨应用记忆
-DOMAIN-SUFFIX, instagram.com
-DOMAIN-SUFFIX, whatsapp.net     # 可选：WhatsApp 入口
-DOMAIN-SUFFIX, whatsapp.com
-```
-
-### 用法
-
-Loon 配置里找到 `[Remote Rule]` 段，加一行：
+拦截穿山甲广告 SDK 与埋点域名；信息流广告由远程脚本改写响应、剔除带广告标记的条目。
+覆盖番茄小说 / 番茄畅听 / 红果短剧。
 
 ```
-https://gcore.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
+https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Plugin/fanqie.plugin
 ```
 
-`policy=` 后面直接填**你打算用的节点名**，不需要新建策略组。也可以填已有的策略组名，
-之后自己在组里手动切节点。名字要和 Loon 里显示的完全一致（含空格、emoji、大小写），
-填错会被静默忽略，表现为规则不生效。
+### 京东去广告 + 历史比价
 
-拉不动就换镜像，内容一样（实测这三个都可用）：
+看商品时显示慢慢买的历史最低价，同时过滤京东广告。**仅支持京东标准模式**。
 
 ```
-https://fastly.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
-https://testingcf.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
-https://cdn.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
+https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Plugin/jingdong.plugin
 ```
 
-> `cdn.jsdelivr.net` 在部分国内网络下不可达（本机实测连接失败），所以主推 `gcore`。
-
-### 不想用远程规则集
-
-直接把这几行贴进本地 `[Rule]` 段，每条自带策略，效果一样：
-
-```
-DOMAIN-SUFFIX,meta.ai,你的节点名
-DOMAIN-SUFFIX,meta.com,你的节点名
-DOMAIN-SUFFIX,fbcdn.net,你的节点名
-DOMAIN-SUFFIX,facebook.com,你的节点名
-DOMAIN-SUFFIX,fb.com,你的节点名
-```
-
-### 最小可用集合
-
-只要让 Muse 能打开，`meta.ai` + `fbcdn.net` 两条就够。
-`facebook.com` / `fb.com` 建议谨慎加——很多 App 的第三方登录、分享、头像都依赖它们，
-如果原本在「广告拦截 → REJECT」或「国内直连」分组里，全量改到美国节点会影响别的 App。
+首次使用需要取慢慢买 CK：**上滑杀掉慢慢买 App 进程** → 重新打开 → 点【我的】→
+等 1～3 秒弹出「获取ck成功🎉」。后台挂着不会重新发请求，这步最容易漏。
 
 ---
 
-## 验证
+## 规则集
 
-1. Loon → 首页 → 打开「请求日志」
-2. 手机浏览器访问 `https://www.meta.ai/muse`
-3. 日志里找 `meta.ai`，看右侧策略是不是你填的节点
-4. 打开 Muse App，进主界面不报「暂不可用 / 地区不支持」即为成功
+### Muse.lsr
 
-若 `meta.ai` 走了 DIRECT → 检查 `[Remote Rule]` 那行的 URL 是否真能拉到（规则条数应为 9），
-以及 `policy=` 的节点名有没有拼错。
+Meta 的 Muse 是 2026-09-08 上线的个人 AI 智能体 App，**仅美国区开放**。
+国内直连 `meta.ai` 会被 Facebook 边缘节点返回 `403 Client challenge`。
 
----
+在配置 `[Remote Rule]` 段加一行，`policy=` 后面填你要用的节点名（不需要新建策略组）：
 
-## 两个前提
+```
+https://gcore.jsdelivr.net/gh/taiji951906413/loon-resource@main/Rule/Muse.lsr,policy=你的节点名,enabled=true
+```
 
-**1. 分流到美国 ≠ 能用。**
-Muse 是美区独占产品，除网络外还需要：App Store 账号是美区（否则搜不到、下不了）、
-账号本身是美区 Meta 账号；把 iPhone「地区」设成美国成功率更高。
+规则内容（裸规则，不带策略）：`meta.ai`、`meta.com`、`fbcdn.net`、`facebook.com`、`fb.com`，
+可选 `instagram.com`、`cdninstagram.com`、`whatsapp.com`、`whatsapp.net`。
 
-**2. `raw.githubusercontent.com` 在国内不可达。**
-所以引用地址用 jsdelivr，不要用 raw 链接。实测 `raw.githubusercontent.com`、`cdn.jsdelivr.net`
-（部分网络）、`raw.githack.com`、`cdn.statically.io` 均可能失败；
-`gcore.jsdelivr.net` / `fastly.jsdelivr.net` / `testingcf.jsdelivr.net` 更稳。
+最小可用只需 `meta.ai` + `fbcdn.net`。`facebook.com` 会影响别的 App 的第三方登录，谨慎加。
 
 ---
 
-## 关于规则优先级
+## 为什么全部用 jsdelivr
 
-Loon 3.0.3 之后的匹配算法：
+`raw.githubusercontent.com` 在国内网络层直接不可达（TLS 握手就失败），
+所以本仓库所有引用都走 jsdelivr 镜像：
 
-- **域名类规则永远优先于 IP 类规则**，命中域名规则后不再做 IP 匹配
-  → 所以不用操心规则写在 `GEOIP,CN,DIRECT` 前面还是后面
-- 其余同类型规则按书写顺序；优先级：**本地规则 > 插件中的规则 > 订阅规则**
+```
+gcore.jsdelivr.net        ← 主用，实测稳定
+fastly.jsdelivr.net       ← 备选
+testingcf.jsdelivr.net    ← 备选
+cdn.jsdelivr.net          ← 部分网络不可达
+```
 
-也就是说订阅规则优先级最低。如果本地规则里已有覆盖 `meta.ai` 的条目，本地那条会赢。
+把 `gcore` 换成 `fastly` 或 `testingcf` 即可，路径不变。
+
+---
+
+## 前置条件
+
+- iPhone / iPad，已装 Loon
+- **已安装并信任 Loon 的 MITM 证书** —— 两个插件的 `[Script]` 都依赖它
+  安装：Loon → 配置 → 证书 → 生成并安装 → iOS「设置」装描述文件 →
+  通用 → 关于本机 → 证书信任设置 → 打开 Loon 的开关
+- 只装证书不打开信任开关，等于没装
+
+---
+
+## 致谢
+
+插件和脚本的原始作者：
+
+- **番茄系去广告**：本仓库整理
+- **京东去广告 + 比价**：RuCu6、Maasea、MuTu（githubdulong）、苍井灰灰（wf021325）、
+  mw418、可莉、mieqq
+
+本仓库只做脚本自托管和地址修复，业务逻辑未改动。
