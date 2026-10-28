@@ -1,0 +1,21 @@
+# HomePage: https://meta.ai/muse
+# UpdateTime: 2026-10-28 10:10:00
+# RuleCount: 9
+# 用法：Loon 配置 [Remote Rule] 段引用本文件，策略由引用行统一指定
+# 例：https://你的地址/Muse.lsr,policy=你的节点名,enabled=true
+# 说明：规则集内只写裸规则，不写策略名
+
+# 核心：Muse 本体
+DOMAIN-SUFFIX, meta.ai
+DOMAIN-SUFFIX, meta.com
+
+# 依赖：静态资源与账号体系
+DOMAIN-SUFFIX, fbcdn.net
+DOMAIN-SUFFIX, facebook.com
+DOMAIN-SUFFIX, fb.com
+
+# 可选：跨应用记忆 / Instagram 联动 / WhatsApp 入口，不需要可整段删除
+DOMAIN-SUFFIX, cdninstagram.com
+DOMAIN-SUFFIX, instagram.com
+DOMAIN-SUFFIX, whatsapp.net
+DOMAIN-SUFFIX, whatsapp.com
