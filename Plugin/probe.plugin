@@ -1,24 +1,24 @@
-#!name = 链路探针（Loon 3.5.2 新语法）
-#!desc = 只做诊断，排查完请卸载。\n① Safari 打开 https://www.baidu.com —— 页面被替换成黑底大字「脚本执行正常」= 拦截+下载+执行全通\n② 再打开 https://www.manmanbuy.com —— 会弹通知记录请求\n注意：本插件用的是 request if ${url} ~= /.../ then script(...) 新写法，适配 Loon 3.x。
+#!name = 链路探针（二分定位）
+#!desc = 只做诊断，排查完请卸载。\n测试顺序：\n① 打开 http://neverssl.com —— 纯 HTTP，不需要 MITM 解密。页面被替换 = 脚本引擎正常\n② 打开 https://www.baidu.com —— HTTPS，需要 MITM。页面被替换 = 解密正常\n③ 打开 https://www.manmanbuy.com —— 目标站点\n把三步分别的结果告诉我就行。
 #!system = ios
 #!loon_version = 3.5.2(1005)
 
 # ============================================================
-# 为什么重做：
-#   旧写法 http-request <正则> script-path=... 属于老版本格式，
-#   在 Loon 3.x 的插件里不一定被解析，会导致脚本静默不执行。
-#   这里改成 3.x 的写法：request if ${url} ~= /正则/i then script("url") with ...
-#
-# 两个测试互不干扰：
-#   百度  → 走 response 改写页面，不依赖通知权限，肉眼可见
-#   慢慢买 → 走 request 弹通知，记录 App 真实请求
+# 为什么要三个测试点：
+#   纯 HTTP 请求不经过证书解密，Loon 直接就能执行脚本。
+#   如果 neverssl 能改写、baidu 不能改写，说明问题卡在 MITM 解密
+#   （证书未信任，或站点走 HTTP/3 QUIC 导致 Loon 无法解密）。
+#   如果两个都不能改写，说明脚本引擎/插件本身没生效。
 # ============================================================
 
 [Script]
-# ① 可见性验证：改写百度首页响应体
-response if ${url} ~= /^https?:\/\/www\.baidu\.com\//i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/probe_visible.js") with tag="[探针]百度可见", requires_body=true
+# ① 纯 HTTP 对照组：不依赖 MITM
+response if ${url} ~= /^http:\/\/neverssl\.com\//i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/probe_visible.js") with tag="[探针]HTTP对照", requires_body=true
 
-# ② 请求记录：慢慢买任意请求都弹通知
+# ② HTTPS 对照组：依赖 MITM 解密
+response if ${url} ~= /^https?:\/\/www\.baidu\.com\//i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/probe_visible.js") with tag="[探针]百度", requires_body=true
+
+# ③ 目标：慢慢买请求记录
 request if ${url} ~= /^https?:\/\/([a-z0-9-]+\.)*manmanbuy\.com\//i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/mmb_probe.js") with tag="[探针]慢慢买请求", requires_body=true
 
 [MitM]
