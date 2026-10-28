@@ -8,7 +8,7 @@
 #!loon_version = 3.5.2(1005)
 #!homepage = https://github.com/taiji951906413/loon-resource
 #!icon = https://raw.githubusercontent.com/sooyaaabo/IconLibrary/main/App/JingDong.png
-#!date = 2026-10-28 10:40
+#!date = 2026-10-28 11:33
 
 # 脚本全部自托管在本仓库 script/ 目录，源文件取自原作者（见 README 致谢）。
 # 脚本引用走 GitHub 源地址。
@@ -48,6 +48,8 @@ response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=l
 request if ${url} ~= /^https?:\/\/apapia-sqk-weblogic\.manmanbuy\.com\/baoliao\/center\/menu(\?.*)?$/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_mw418.js") with enable=${Manmanbuy-Cookie}, tag="[京东比价]获取慢慢买Cookie", timeout=60, requires_body=true
 
 # 标题嵌入版
+# 注意：本仓库这份 jd_price_wf021325.js 只实现详情页 graphext 嵌入，不含标题嵌入逻辑。
+# 打开此项不会生效，但也不会再造成白屏——脚本对非 graphext 的 URL 会立即原样放行。默认关闭。
 response if ${url} ~= /^https?:\/\/api\.m\.jd\.com\/client\.action\?functionId=(wareBusiness|serverConfig|basicConfig)/i then script("https://raw.githubusercontent.com/taiji951906413/loon-resource/refs/heads/main/Script/jd_price_wf021325.js") with enable=${JDPrice-TitleEmbed}, tag="[京东比价]标题嵌入版", requires_body=true
 
 # 详情通知版
