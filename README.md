@@ -34,19 +34,22 @@ DOMAIN-SUFFIX, whatsapp.com
 Loon 配置里找到 `[Remote Rule]` 段，加一行：
 
 ```
-https://cdn.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
+https://gcore.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
 ```
 
 `policy=` 后面直接填**你打算用的节点名**，不需要新建策略组。也可以填已有的策略组名，
 之后自己在组里手动切节点。名字要和 Loon 里显示的完全一致（含空格、emoji、大小写），
 填错会被静默忽略，表现为规则不生效。
 
-cdn.jsdelivr.net 拉不动就换镜像，内容一样：
+拉不动就换镜像，内容一样（实测这三个都可用）：
 
 ```
-https://gcore.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
 https://fastly.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
+https://testingcf.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
+https://cdn.jsdelivr.net/gh/taiji951906413/loon-rules@main/Muse.lsr,policy=你的节点名,enabled=true
 ```
+
+> `cdn.jsdelivr.net` 在部分国内网络下不可达（本机实测连接失败），所以主推 `gcore`。
 
 ### 不想用远程规则集
 
