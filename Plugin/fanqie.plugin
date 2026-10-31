@@ -1,6 +1,7 @@
 #!name=番茄系去广告·远程版（番茄小说/畅听/红果）
-#!desc=拦截穿山甲广告 SDK 与埋点域名；信息流广告由远程 js 改写响应剔除。手机粘贴地址即可导入，无需电脑，也无需改脚本。
+#!desc=拦截穿山甲广告 SDK、阿里系 Tanx/阿里妈妈广告联盟与埋点域名；信息流广告由远程 js 改写响应剔除。手机粘贴地址即可导入，无需电脑，也无需改脚本。
 #!system=ios
+#!date=2026-10-31 21:50
 
 # ============================================================
 # v2 说明：脚本不再需要「切模式」
@@ -47,11 +48,29 @@ DOMAIN-SUFFIX,dig.bdurl.net,REJECT
 # DOMAIN-SUFFIX,log.snssdk.com,REJECT
 # DOMAIN-SUFFIX,gurd.snssdk.com,REJECT
 
+# ---------- 档位 D：阿里系广告联盟 Tanx / 阿里妈妈（2026-10-31 新增） ----------
+# 依据：番茄小说冷启动时抓到
+#   GET http://ef-dongfeng.tanx.com/tanx?p=...&k=887  → 1x1 gif 曝光打点
+#   UA 为 WebView（Mobile/15E148），即广告是阿里系 H5 页，走 Tanx 而非穿山甲。
+# tanx.com 是阿里广告交易平台，ef-* 是广告位子域；atanx*.alicdn.com 是创意素材 CDN。
+# 拦掉后开屏/信息流里的天猫·淘宝广告页加载不出来，正常阅读/听书不受影响。
+DOMAIN-SUFFIX,tanx.com,REJECT
+DOMAIN-SUFFIX,alimama.com,REJECT
+DOMAIN-SUFFIX,mmstat.com,REJECT
+DOMAIN-SUFFIX,atanx.alicdn.com,REJECT
+DOMAIN-SUFFIX,atanx2.alicdn.com,REJECT
+DOMAIN-SUFFIX,simba.taobao.com,REJECT
+DOMAIN-SUFFIX,adash.m.taobao.com,REJECT
+
+# 穿山甲补充（国际版 SDK 域名，国内版用不到，保守起见也拦掉）
+DOMAIN-SUFFIX,pangle.io,REJECT
+
 # 注意：绝对不要 REJECT 下面这几个，否则 App 直接不可用
 #   api5-normal-sinfonlinea.fqnovel.com   （主 API）
 #   reading.snssdk.com                    （H5 页面/接口）
 #   api.fqnovel.com
 #   lf3-reading.fqnovelpic.com            （封面/插图 CDN）
+#   alicdn.com / aliyuncs.com 整域       （大量正常图片走这里，只能拦 atanx* 子域）
 
 
 [Script]
